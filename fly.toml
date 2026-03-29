@@ -1,0 +1,35 @@
+app            = "easyfinder"
+primary_region = "lax"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[processes]
+  app = "node dist/src/index.js"
+
+[env]
+  NODE_ENV  = "production"
+  PORT      = "8080"
+  DEMO_MODE = "true"
+
+# Secrets — set via `fly secrets set KEY=value`, never commit values here:
+#   fly secrets set JWT_SECRET=...
+#   fly secrets set ANTHROPIC_API_KEY=...
+#   fly secrets set DB_HOST=... DB_USER=... DB_PASSWORD=... DB_NAME=...
+#   fly secrets set STRIPE_SECRET_KEY=... STRIPE_PRICE_ID=...
+#   fly secrets set CORS_ORIGINS=https://your-frontend.vercel.app
+
+[http_service]
+  internal_port        = 8080
+  force_https          = true
+  auto_stop_machines   = "off"
+  auto_start_machines  = true
+  min_machines_running = 1
+  processes            = ["app"]
+
+[[http_service.checks]]
+  interval     = "15s"
+  timeout      = "5s"
+  grace_period = "10s"
+  method       = "GET"
+  path         = "/api/health"

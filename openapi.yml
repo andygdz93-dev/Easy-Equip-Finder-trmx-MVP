@@ -1,0 +1,390 @@
+openapi: 3.0.3
+info:
+  title: EasyFinder API
+  version: 1.0.0
+  description: >
+    EasyFinder is an intelligent heavy-equipment discovery and scoring platform.
+    This spec documents current endpoints and reserves planned admin/auth/seller routes.
+servers:
+  - url: https://easyfinder.fly.dev
+    description: Production
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: System
+  - name: Listings
+  - name: Watchlist
+  - name: Scoring
+  - name: Auth
+  - name: Admin
+  - name: Seller
+
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Confirms API is running and Mongo config is present.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/listings:
+    get:
+      tags: [Listings]
+      summary: Get scored listings
+      description: Returns equipment listings ranked by the scoring engine.
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+          description: Keyword search (optional)
+        - in: query
+          name: category
+          schema: { type: string }
+          description: Category filter (optional)
+        - in: query
+          name: state
+          schema: { type: string }
+          description: State filter (optional)
+        - in: query
+          name: maxPrice
+          schema: { type: number }
+          description: Price cap (optional)
+        - in: query
+          name: maxHours
+          schema: { type: number }
+          description: Hours cap (optional)
+        - in: query
+          name: operableOnly
+          schema: { type: boolean, default: false }
+          description: If true, filters out non-operable listings (optional, future)
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+          description: Pagination (future)
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+          description: Pagination (future)
+      responses:
+        "200":
+          description: Array of listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+
+  /api/scoring-configs:
+    get:
+      tags: [Scoring]
+      summary: Get active scoring configuration
+      responses:
+        "200":
+          description: Current scoring policy and weights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScoringConfig"
+
+  /api/watchlist:
+    get:
+      tags: [Watchlist]
+      summary: Get watchlist
+      description: Returns user watchlist. Currently may be demo/stub until auth is enabled.
+      responses:
+        "200":
+          description: Watchlist response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistResponse"
+        "401":
+          description: Unauthorized (future when auth required)
+
+  # -------- Planned endpoints (documented early for contract stability) --------
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (planned)
+      description: Returns JWT and user profile.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid credentials
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register (planned)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+
+  /api/admin/ingestion/sources:
+    get:
+      tags: [Admin]
+      summary: List ingestion sources (planned)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ingestion sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/IngestionSource" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /api/admin/scoring-configs:
+    put:
+      tags: [Admin]
+      summary: Update scoring config (planned)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScoringConfigUpdate" }
+      responses:
+        "200":
+          description: Updated scoring config
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScoringConfig" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+
+  /api/seller/listings:
+    post:
+      tags: [Seller]
+      summary: Create seller listing (planned)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerListingCreate" }
+      responses:
+        "200":
+          description: Created listing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Listing" }
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "400": { description: Validation error }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [ok, mongoConfigured]
+      properties:
+        ok: { type: boolean, example: true }
+        mongoConfigured: { type: boolean, example: true }
+
+    Listing:
+      type: object
+      required: [id, title, category, state, source, is_operable, totalScore, scores, confidenceScore]
+      properties:
+        id: { type: string, example: "listing_123" }
+        title: { type: string, example: "2018 CAT 320 Excavator" }
+        category: { type: string, example: "excavator" }
+        price: { type: number, nullable: true, example: 125000 }
+        hours: { type: number, nullable: true, example: 4200 }
+        year: { type: integer, nullable: true, example: 2018 }
+        make: { type: string, nullable: true, example: "Caterpillar" }
+        model: { type: string, nullable: true, example: "320" }
+        state: { type: string, example: "CA" }
+        is_operable: { type: boolean, example: true }
+        source: { type: string, example: "partner_dealer" }
+        url: { type: string, nullable: true, example: "https://example.com/listing/123" }
+        images:
+          type: array
+          items: { type: string }
+          example: ["https://example.com/img1.jpg"]
+
+        totalScore: { type: number, example: 84 }
+        scores:
+          $ref: "#/components/schemas/ScoreBreakdown"
+        confidenceScore: { type: number, example: 82 }
+        flags:
+          type: array
+          items: { type: string }
+          example: []
+        rationale:
+          type: array
+          items: { type: string }
+          example:
+            - "Price is below category benchmark (strong value)."
+            - "Mild location preference applied (CA)."
+
+    ScoreBreakdown:
+      type: object
+      required: [priceScore, hoursScore, locationScore, riskScore]
+      properties:
+        priceScore: { type: number, example: 88 }
+        hoursScore: { type: number, example: 74 }
+        locationScore: { type: number, example: 65 }
+        riskScore: { type: number, example: 60 }
+
+    WatchlistResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchlistItem"
+
+    WatchlistItem:
+      type: object
+      required: [listingId]
+      properties:
+        listingId: { type: string, example: "listing_123" }
+        addedAt: { type: string, format: date-time, nullable: true }
+
+    ScoringConfig:
+      type: object
+      required: [weights, preferredStates]
+      properties:
+        weights:
+          type: object
+          required: [price, hours, location, risk]
+          properties:
+            price: { type: number, example: 0.35 }
+            hours: { type: number, example: 0.35 }
+            location: { type: number, example: 0.20 }
+            risk: { type: number, example: 0.10 }
+        preferredStates:
+          type: array
+          items: { type: string }
+          example: ["CA", "AZ", "TX", "IA"]
+        maxPrice: { type: number, nullable: true, example: 250000 }
+        maxHours: { type: number, nullable: true, example: 8000 }
+        operabilityPenalty: { type: number, nullable: true, example: -60 }
+
+    ScoringConfigUpdate:
+      type: object
+      properties:
+        weights:
+          type: object
+          properties:
+            price: { type: number }
+            hours: { type: number }
+            location: { type: number }
+            risk: { type: number }
+        preferredStates:
+          type: array
+          items: { type: string }
+        maxPrice: { type: number }
+        maxHours: { type: number }
+        operabilityPenalty: { type: number }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        role:
+          type: string
+          enum: [buyer, seller]
+          example: buyer
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string, example: "eyJhbGciOi..." }
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        role:
+          type: string
+          enum: [demo, buyer, seller, admin]
+
+    IngestionSource:
+      type: object
+      required: [id, name, type, status]
+      properties:
+        id: { type: string, example: "source_ironplanet" }
+        name: { type: string, example: "IronPlanet" }
+        type:
+          type: string
+          enum: [dealer_feed, marketplace_api, csv_import, manual]
+        status:
+          type: string
+          enum: [active, paused, error]
+        lastSyncAt: { type: string, format: date-time, nullable: true }
+
+    SellerListingCreate:
+      type: object
+      required: [title, category, state, is_operable]
+      properties:
+        title: { type: string }
+        category: { type: string }
+        price: { type: number }
+        hours: { type: number }
+        year: { type: integer }
+        make: { type: string }
+        model: { type: string }
+        state: { type: string }
+        is_operable: { type: boolean }
+        description: { type: string }
+        images:
+          type: array
+          items: { type: string }

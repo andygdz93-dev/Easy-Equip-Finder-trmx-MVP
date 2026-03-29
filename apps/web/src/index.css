@@ -1,0 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.demo-shell {
+  --demo-bg: radial-gradient(1200px 800px at 5% 5%, #fff3cf 0%, #f5efe4 45%, #efe2d0 100%);
+  --demo-ink: #1f1b16;
+  --demo-muted: #6f6a5f;
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.demo-title {
+  font-family: "Fraunces", serif;
+  letter-spacing: -0.02em;
+}
