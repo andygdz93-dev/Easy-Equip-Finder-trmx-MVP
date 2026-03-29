@@ -23,7 +23,7 @@ const dbRowToListing = (row: any): Listing => ({
   id:          String(row.id),
   title:       row.equipment,
   description: `${row.equipment} — Market Value: $${Number(row.market_value).toLocaleString()}`,
-  state:       row.state || "UNKNOWN",
+  state:       normalizeState(row.state),
   price:       Number(row.price),
   hours:       Number(row.hours_used) || 0,
   operable:    row.operable !== false,
@@ -109,4 +109,35 @@ export default async function listingRoutes(app: FastifyInstance) {
       isBestOption:    result.isBestOption,
     });
   });
+}
+
+// ── State normalization (from EasyfinderAI-v2/normalizers/listing.js) ─────────
+// Handles full state names ("California"), abbreviations ("CA"), and
+// location strings ("Houston, TX") from scraped listings.
+export function normalizeState(raw: string | null | undefined): string {
+  if (!raw) return "UNKNOWN";
+  const s = String(raw).trim();
+
+  const abbrevMatch = s.match(/,\s*([A-Z]{2})\b/) || s.match(/\b([A-Z]{2})\b$/);
+  if (abbrevMatch) return abbrevMatch[1].toUpperCase();
+
+  const map: Record<string, string> = {
+    Alabama:"AL",Alaska:"AK",Arizona:"AZ",Arkansas:"AR",California:"CA",
+    Colorado:"CO",Connecticut:"CT",Delaware:"DE",Florida:"FL",Georgia:"GA",
+    Hawaii:"HI",Idaho:"ID",Illinois:"IL",Indiana:"IN",Iowa:"IA",Kansas:"KS",
+    Kentucky:"KY",Louisiana:"LA",Maine:"ME",Maryland:"MD",Massachusetts:"MA",
+    Michigan:"MI",Minnesota:"MN",Mississippi:"MS",Missouri:"MO",Montana:"MT",
+    Nebraska:"NE",Nevada:"NV","New Hampshire":"NH","New Jersey":"NJ",
+    "New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND",
+    Ohio:"OH",Oklahoma:"OK",Oregon:"OR",Pennsylvania:"PA","Rhode Island":"RI",
+    "South Carolina":"SC","South Dakota":"SD",Tennessee:"TN",Texas:"TX",
+    Utah:"UT",Vermont:"VT",Virginia:"VA",Washington:"WA","West Virginia":"WV",
+    Wisconsin:"WI",Wyoming:"WY"
+  };
+
+  for (const [name, abbr] of Object.entries(map)) {
+    if (s.includes(name)) return abbr;
+  }
+
+  return s.length === 2 ? s.toUpperCase() : "UNKNOWN";
 }
