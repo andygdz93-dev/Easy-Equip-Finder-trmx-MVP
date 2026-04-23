@@ -20,6 +20,7 @@ import adminRoutes    from "./routes/admin.js";
 import intelligenceRoutes from "./routes/intelligence.js";
 import sellerRoutes   from "./routes/seller.js";
 import { dealRoutes } from "./routes/deal.js";
+import emailRoutes from "./routes/emails.js";
 
 declare module "fastify" {
   interface FastifyRequest  { requestId: string; }
@@ -40,6 +41,7 @@ export const buildServer = () => {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
       if (config.corsOrigins.includes(origin)) return cb(null, true);
+      if (origin.startsWith("http://localhost:")) return cb(null, true);
       return cb(new Error("Origin not allowed"), false);
     },
     credentials: true,
@@ -110,6 +112,7 @@ export const buildServer = () => {
   app.register(intelligenceRoutes, { prefix: "/api/intelligence" });
   app.register(sellerRoutes,   { prefix: "/api/seller" });
   app.register(dealRoutes,     { prefix: "/api" });
+  app.register(emailRoutes,    { prefix: "/api/email" });
 
   return app;
 };

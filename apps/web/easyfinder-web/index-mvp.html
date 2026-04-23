@@ -1,0 +1,7 @@
+<!DOCTYPE html><html><head><title>EasyFinder MVP</title></head><body><pre id="out">loading...</pre><script>
+fetch('http://localhost:8080/api/deal/evaluate',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({listing_id:'caterpillar-320d-001',asking_price:38000,category:'excavator'})
+}).then(r=>r.json()).then(d=>document.getElementById('out').textContent=JSON.stringify(d,null,2)).catch(e=>document.getElementById('out').textContent='ERROR: '+e);
+</script></body></html>
