@@ -25,9 +25,9 @@ const dbRowToListing = (row: any): Listing => ({
   description: `${row.equipment} — Market Value: $${Number(row.market_value).toLocaleString()}`,
   state:       normalizeState(row.state),
   price:       Number(row.price),
-  hours:       Number(row.hours_used) || 0,
+  hours:       Number(row.hours) || 0,
   operable:    row.operable !== false,
-  category:    row.equipment,
+  category:    row.category || 'Unknown',
   source:      "database",
   createdAt:   row.scraped_at
     ? new Date(row.scraped_at).toISOString()

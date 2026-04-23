@@ -36,11 +36,12 @@ export async function getRealListings() {
         state,
         source,
         operable,
-        service_history,
-        inspection_report,
-        good_photos,
-        url,
-        scraped_at
+        category,
+        
+        
+        
+        
+        created_at
       FROM listings
       ORDER BY score DESC
       LIMIT 50

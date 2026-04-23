@@ -19,6 +19,7 @@ import authRoutes     from "./routes/auth.js";
 import adminRoutes    from "./routes/admin.js";
 import intelligenceRoutes from "./routes/intelligence.js";
 import sellerRoutes   from "./routes/seller.js";
+import { dealRoutes } from "./routes/deal.js";
 
 declare module "fastify" {
   interface FastifyRequest  { requestId: string; }
@@ -108,6 +109,7 @@ export const buildServer = () => {
   app.register(adminRoutes,    { prefix: "/api/admin" });
   app.register(intelligenceRoutes, { prefix: "/api/intelligence" });
   app.register(sellerRoutes,   { prefix: "/api/seller" });
+  app.register(dealRoutes,     { prefix: "/api" });
 
   return app;
 };

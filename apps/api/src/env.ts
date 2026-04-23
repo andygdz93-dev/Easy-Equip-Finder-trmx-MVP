@@ -46,10 +46,20 @@ const EnvSchema = z.object({
   // Stripe — optional, payments disabled if not set
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_PRICE_ID:   z.string().optional(),
+  STRIPE_PRICE_ID_PRO: z.string().optional(),
+  STRIPE_PRICE_ID_ENTERPRISE: z.string().optional(),
   CLIENT_URL:        z.string().optional().default("http://localhost:5173"),
 
   // Anthropic — optional, AI broker disabled if not set
   ANTHROPIC_API_KEY: z.string().optional(),
+
+  // Email — optional, emails disabled if not set
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(),
+  APP_BASE_URL: z.string().optional().default("http://localhost:3001"),
+
+  // Launch date — used for promo window calculation
+  LAUNCH_DATE: z.string().optional().default("2026-01-01"),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
